@@ -2,6 +2,8 @@
 
 This project deploys a serverless Flask API on AWS Lambda that accepts a news article URL, fetches and cleans the article, and returns a concise Gemini-powered summary. It also includes a minimal HTML interface and testing instructions.
 
+<img width="1778" height="761" alt="image" src="https://github.com/user-attachments/assets/a54ff11f-f81c-4efc-9cc4-848cc1ee150f" />
+
 ## Features
 
 - `POST /summarize` endpoint (Flask → AWS API Gateway → Lambda)
