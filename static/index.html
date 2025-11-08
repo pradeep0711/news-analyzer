@@ -1,0 +1,140 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>News Summarizer</title>
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/modern-normalize/2.0.0/modern-normalize.min.css"
+    />
+    <style>
+      body {
+        font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+        background: #f8fafc;
+        color: #0f172a;
+        margin: 0;
+        padding: 2rem;
+      }
+      .container {
+        max-width: 720px;
+        margin: 0 auto;
+        background: #fff;
+        border-radius: 12px;
+        box-shadow: 0 12px 24px rgba(15, 23, 42, 0.08);
+        padding: 2.5rem;
+      }
+      h1 {
+        margin: 0 0 1.5rem;
+        font-size: 2rem;
+        color: #1e293b;
+      }
+      form {
+        display: grid;
+        gap: 1rem;
+      }
+      label {
+        font-weight: 600;
+      }
+      input[type="url"] {
+        padding: 0.75rem 1rem;
+        border-radius: 8px;
+        border: 1px solid #cbd5f5;
+        font-size: 1rem;
+      }
+      button {
+        background: #2563eb;
+        border: none;
+        padding: 0.8rem 1.2rem;
+        color: #fff;
+        border-radius: 8px;
+        font-size: 1rem;
+        font-weight: 600;
+        cursor: pointer;
+      }
+      button:disabled {
+        opacity: 0.6;
+        cursor: progress;
+      }
+      .result {
+        margin-top: 2rem;
+        padding: 1.5rem;
+        border-radius: 12px;
+        background: #eff6ff;
+        border: 1px solid #bfdbfe;
+      }
+      .error {
+        margin-top: 1rem;
+        color: #dc2626;
+        font-weight: 600;
+      }
+      pre {
+        white-space: pre-wrap;
+        font: inherit;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="container">
+      <h1>News Summarizer</h1>
+      <p>Paste a news article URL to receive a concise summary.</p>
+      <form id="summarize-form">
+        <label for="url">Article URL</label>
+        <input id="url" type="url" name="url" placeholder="https://example.com/news" required />
+        <button type="submit">Summarize</button>
+      </form>
+      <div id="error" class="error" role="alert"></div>
+      <div id="result" class="result" hidden>
+        <h2 id="article-title"></h2>
+        <pre id="summary"></pre>
+        <a id="source" href="#" target="_blank" rel="noopener noreferrer">View original article</a>
+      </div>
+    </div>
+
+    <script>
+      const form = document.getElementById("summarize-form");
+      const result = document.getElementById("result");
+      const errorBox = document.getElementById("error");
+      const summaryEl = document.getElementById("summary");
+      const titleEl = document.getElementById("article-title");
+      const sourceLink = document.getElementById("source");
+
+      async function submitHandler(event) {
+        event.preventDefault();
+        errorBox.textContent = "";
+        result.hidden = true;
+
+        const button = form.querySelector("button");
+        button.disabled = true;
+
+        const url = form.url.value.trim();
+
+        try {
+          const response = await fetch("/summarize", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ url }),
+          });
+
+          const data = await response.json();
+
+          if (!response.ok) {
+            throw new Error(data.error || "Unexpected error");
+          }
+
+          titleEl.textContent = data.title || "Summary";
+          summaryEl.textContent = data.summary || "No summary returned.";
+          sourceLink.href = data.source_url;
+          result.hidden = false;
+        } catch (err) {
+          errorBox.textContent = err.message;
+        } finally {
+          button.disabled = false;
+        }
+      }
+
+      form.addEventListener("submit", submitHandler);
+    </script>
+  </body>
+</html>
+

@@ -1,0 +1,71 @@
+AWSTemplateFormatVersion: "2010-09-09"
+Transform: AWS::Serverless-2016-10-31
+Description: >-
+  Serverless news summarizer API powered by Flask, LangChain, and Google Gemini.
+
+Globals:
+  Function:
+    Runtime: python3.12
+    Timeout: 30
+    MemorySize: 1024
+    Environment:
+      Variables:
+        GOOGLE_API_KEY: "{{resolve:ssm:/news-summarizer/google-api-key:1}}"
+        GEMINI_MODEL: gemini-2.0-flash
+        MAX_ARTICLE_CHARS: "8000"
+
+Parameters:
+  StageName:
+    Type: String
+    Default: prod
+    Description: Deployment stage for the API Gateway.
+
+Resources:
+  SummarizerFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      Handler: lambda_handler.lambda_handler
+      CodeUri: .
+      Description: Summarizes news articles using Google Gemini via LangChain.
+      Architectures:
+        - x86_64
+      Events:
+        SummarizeApi:
+          Type: Api
+          Properties:
+            Path: /summarize
+            Method: post
+            RestApiId: !Ref ApiGateway
+
+  HealthCheckRoute:
+    Type: AWS::Serverless::Function
+    Properties:
+      Handler: lambda_handler.lambda_handler
+      CodeUri: .
+      Runtime: python3.12
+      Timeout: 5
+      MemorySize: 512
+      Description: Shared handler for API Gateway health routes.
+      Events:
+        HealthApi:
+          Type: Api
+          Properties:
+            Path: /health
+            Method: get
+            RestApiId: !Ref ApiGateway
+
+  ApiGateway:
+    Type: AWS::Serverless::Api
+    Properties:
+      StageName: !Ref StageName
+      Cors:
+        AllowHeaders: "*"
+        AllowMethods: "OPTIONS,GET,POST"
+        AllowOrigin: "*"
+      EndpointConfiguration: REGIONAL
+
+Outputs:
+  ApiUrl:
+    Description: Invoke URL for the deployed API.
+    Value: !Sub "https://${ApiGateway}.execute-api.${AWS::Region}.amazonaws.com/${StageName}"
+
